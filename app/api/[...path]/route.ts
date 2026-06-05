@@ -1,3 +1,7 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+const TELEGRAM_API = 'https://api.telegram.org';
+
 async function handleProxy(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> }
@@ -41,3 +45,9 @@ async function handleProxy(
     );
   }
 }
+
+export const GET = (req: NextRequest, ctx: any) => handleProxy(req, ctx);
+export const POST = (req: NextRequest, ctx: any) => handleProxy(req, ctx);
+export const PUT = (req: NextRequest, ctx: any) => handleProxy(req, ctx);
+export const DELETE = (req: NextRequest, ctx: any) => handleProxy(req, ctx);
+export const PATCH = (req: NextRequest, ctx: any) => handleProxy(req, ctx);

@@ -9,15 +9,21 @@ async function handleProxy(
   try {
     const { path } = await context.params;
     const url = new URL(request.url);
-
+    
     const pathStr = path.join('/');
+    
     const telegramUrl = `\( {TELEGRAM_API}/ \){pathStr}${url.search || ''}`;
 
     console.log('Proxy request:', {
       original: request.url,
       target: telegramUrl,
-      method: request.method
+      method: request.method,
+      pathStr
     });
+
+    if (!pathStr.startsWith('bot')) {
+      return new NextResponse('Not Found', { status: 404 });
+    }
 
     const headers = new Headers(request.headers);
     headers.delete('host');
@@ -42,12 +48,11 @@ async function handleProxy(
     });
 
   } catch (error: any) {
-    console.error('Proxy error details:', error);
+    console.error('Proxy error:', error);
     return NextResponse.json(
       { 
         error: 'Proxy Error', 
-        message: error?.message || 'Unknown error',
-        details: 'Check server logs for more info'
+        message: error?.message || 'Unknown error' 
       },
       { status: 502 }
     );

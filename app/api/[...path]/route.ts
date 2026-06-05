@@ -4,70 +4,58 @@ const TELEGRAM_API = 'https://api.telegram.org';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  context: { params: { path: string[] } }
 ) {
-  return handleRequest(request, params.path);
+  return handleProxy(request, context.params.path);
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  context: { params: { path: string[] } }
 ) {
-  return handleRequest(request, params.path);
+  return handleProxy(request, context.params.path);
 }
 
-// Поддержка всех методов (PUT, DELETE и т.д., если понадобится)
-export async function PUT(req: NextRequest, { params }: any) {
-  return handleRequest(req, params.path);
+export async function PUT(
+  request: NextRequest,
+  context: { params: { path: string[] } }
+) {
+  return handleProxy(request, context.params.path);
 }
 
-async function handleRequest(request: NextRequest, pathSegments: string[]) {
+async function handleProxy(request: NextRequest, pathSegments: string[]) {
   try {
     const path = pathSegments.join('/');
     const url = new URL(request.url);
-    
-    // Получаем token из пути (обычно bot<token>)
-    const fullPath = `\( {path} \){url.search}`;
+    const telegramUrl = `\( {TELEGRAM_API}/ \){path}${url.search}`;
 
-    const telegramUrl = `\( {TELEGRAM_API}/ \){fullPath}`;
-
-    // Копируем заголовки (кроме host)
-    const headers = new Headers();
-    request.headers.forEach((value, key) => {
-      if (!['host', 'x-forwarded-host'].includes(key.toLowerCase())) {
-        headers.set(key, value);
-      }
-    });
-
-    let body: BodyInit | null = null;
-    if (request.body) {
-      body = await request.text(); // или .blob() / .arrayBuffer() для файлов
-    }
+    const headers = new Headers(request.headers);
+    headers.delete('host');
+    headers.delete('x-forwarded-host');
+    headers.delete('x-forwarded-for');
 
     const response = await fetch(telegramUrl, {
       method: request.method,
       headers,
-      body: body || undefined,
+      body: request.body,
+      duplex: 'half' as const,
     });
 
-    // Копируем ответ
-    const responseBody = await response.text();
     const responseHeaders = new Headers(response.headers);
-
-    // Убираем заголовки, которые могут вызвать проблемы
+    // Убираем проблемные заголовки
     responseHeaders.delete('content-encoding');
     responseHeaders.delete('content-length');
     responseHeaders.delete('transfer-encoding');
 
-    return new NextResponse(responseBody, {
+    return new NextResponse(response.body, {
       status: response.status,
+      statusText: response.statusText,
       headers: responseHeaders,
     });
-
-  } catch (error) {
+  } catch (error: any) {
     console.error('Proxy error:', error);
     return NextResponse.json(
-      { error: 'Proxy error', message: (error as Error).message },
+      { error: 'Proxy Error', message: error?.message || 'Unknown error' },
       { status: 502 }
     );
   }

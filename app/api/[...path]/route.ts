@@ -20,7 +20,6 @@ async function handleProxy(
       method: request.method,
       headers,
       body: request.body,
-      duplex: 'half' as const,
     });
 
     const responseHeaders = new Headers(response.headers);

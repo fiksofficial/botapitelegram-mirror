@@ -21,10 +21,14 @@ async function handleProxy(
     headers.delete('x-forwarded-host');
     headers.delete('x-forwarded-for');
 
+    const body = request.method !== 'GET' && request.method !== 'HEAD'
+      ? await request.arrayBuffer()
+      : undefined;
+
     const response = await fetch(telegramUrl, {
       method: request.method,
       headers,
-      body: request.body,
+      body: body ? Buffer.from(body) : undefined,
     });
 
     const responseHeaders = new Headers(response.headers);

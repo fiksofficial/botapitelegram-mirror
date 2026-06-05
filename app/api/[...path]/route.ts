@@ -2,32 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const TELEGRAM_API = 'https://api.telegram.org';
 
-export async function GET(
+async function handleProxy(
   request: NextRequest,
-  context: { params: { path: string[] } }
+  context: { params: Promise<{ path: string[] }> }
 ) {
-  return handleProxy(request, context.params.path);
-}
-
-export async function POST(
-  request: NextRequest,
-  context: { params: { path: string[] } }
-) {
-  return handleProxy(request, context.params.path);
-}
-
-export async function PUT(
-  request: NextRequest,
-  context: { params: { path: string[] } }
-) {
-  return handleProxy(request, context.params.path);
-}
-
-async function handleProxy(request: NextRequest, pathSegments: string[]) {
   try {
-    const path = pathSegments.join('/');
+    const { path } = await context.params;
     const url = new URL(request.url);
-    const telegramUrl = `\( {TELEGRAM_API}/ \){path}${url.search}`;
+    const telegramUrl = `\( {TELEGRAM_API}/ \){path.join('/')}${url.search}`;
 
     const headers = new Headers(request.headers);
     headers.delete('host');
@@ -42,7 +24,6 @@ async function handleProxy(request: NextRequest, pathSegments: string[]) {
     });
 
     const responseHeaders = new Headers(response.headers);
-    // Убираем проблемные заголовки
     responseHeaders.delete('content-encoding');
     responseHeaders.delete('content-length');
     responseHeaders.delete('transfer-encoding');
@@ -60,3 +41,9 @@ async function handleProxy(request: NextRequest, pathSegments: string[]) {
     );
   }
 }
+
+export const GET = (req: NextRequest, ctx: any) => handleProxy(req, ctx);
+export const POST = (req: NextRequest, ctx: any) => handleProxy(req, ctx);
+export const PUT = (req: NextRequest, ctx: any) => handleProxy(req, ctx);
+export const DELETE = (req: NextRequest, ctx: any) => handleProxy(req, ctx);
+export const PATCH = (req: NextRequest, ctx: any) => handleProxy(req, ctx);

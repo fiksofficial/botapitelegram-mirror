@@ -12,7 +12,7 @@ async function handleProxy(
     
     const pathStr = path.join('/');
     
-    const telegramUrl = `\( {TELEGRAM_API}/ \){pathStr}${url.search || ''}`;
+    const telegramUrl = `${TELEGRAM_API}/${pathStr}${url.search || ''}`;
 
     console.log('Proxy request:', {
       original: request.url,
